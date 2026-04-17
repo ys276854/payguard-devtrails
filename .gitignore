@@ -38,3 +38,7 @@ Thumbs.db
 # ── Misc ──
 *.local
 coverage/
+
+# database
+*.sqlite
+*.db
