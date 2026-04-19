@@ -1,13 +1,22 @@
 import axios from 'axios';
 
-// 🔐 Base URL from Vercel environment variable
+// ✅ Force production fallback if env not loaded
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://payguard-devtrails-1.onrender.com/api";
+
+// 🔍 Debug (remove later if you want)
+console.log("API URL:", BASE_URL);
+
+// 🔐 Create axios instance
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL
+  baseURL: BASE_URL,
 });
 
 // 🔑 Attach token automatically
 API.interceptors.request.use(cfg => {
   const isAdminRoute = (cfg.url || '').includes('/admin');
+
   const token = isAdminRoute
     ? localStorage.getItem('pg_admin_token')
     : localStorage.getItem('pg_token');
@@ -35,11 +44,10 @@ API.interceptors.response.use(
 
       window.location.reload();
     }
+
     return Promise.reject(err);
   }
 );
-
-
 
 // ================= AUTH =================
 export const authAPI = {
@@ -55,8 +63,6 @@ export const authAPI = {
   preferences: (data) =>
     API.patch('/auth/preferences', data),
 };
-
-
 
 // ================= KYC =================
 export const kycAPI = {
@@ -79,8 +85,6 @@ export const kycAPI = {
     API.get('/kyc/location'),
 };
 
-
-
 // ================= POLICY =================
 export const policyAPI = {
   activate: (plan) =>
@@ -99,15 +103,11 @@ export const policyAPI = {
     API.post('/policy/claim', { triggerType }),
 };
 
-
-
 // ================= PREMIUM =================
 export const premiumAPI = {
   calculate: (params = {}) =>
     API.get('/premium/calculate', { params }),
 };
-
-
 
 // ================= ADMIN =================
 export const adminAPI = {
@@ -123,8 +123,6 @@ export const adminAPI = {
   analytics: () =>
     API.get('/admin/analytics'),
 };
-
-
 
 // ================= SIMULATION =================
 export const simulateAPI = {
@@ -149,8 +147,6 @@ export const simulateAPI = {
   detailedTimeline: (userId) =>
     API.get(`/simulate/timeline?userId=${encodeURIComponent(userId)}`),
 };
-
-
 
 // ================= MONITOR =================
 export const monitorAPI = {
