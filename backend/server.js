@@ -19,54 +19,70 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+//
 // ─────────────────────────────────────────────
-// ✅ CORS FIX (ALLOW VERCEL + LOCAL)
+// ✅ CORS FIX (ALLOW ALL VERCEL + LOCAL)
 // ─────────────────────────────────────────────
+//
+
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-
-  // 👉 your Vercel domains
-  'https://payguard-devtrails.vercel.app',
-  'https://payguard-devtrails-gvyhye9lj-ys276854-2821s-projects.vercel.app',
-
-  // fallback (optional)
-  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL, // optional
 ].filter(Boolean);
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (like Postman)
+  origin: (origin, callback) => {
+    // allow tools like Postman / curl
     if (!origin) return callback(null, true);
 
+    // ✅ allow ALL Vercel domains automatically
+    if (origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+
+    // allow local + env
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
-    } else {
-      console.log("❌ Blocked by CORS:", origin);
-      return callback(new Error('Not allowed by CORS'));
     }
+
+    console.log('❌ Blocked by CORS:', origin);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
 }));
 
+//
 // ─────────────────────────────────────────────
 // ✅ BODY PARSER
 // ─────────────────────────────────────────────
+//
+
 app.use(express.json());
 
+//
 // ─────────────────────────────────────────────
 // ✅ RATE LIMIT
 // ─────────────────────────────────────────────
+//
+
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
+  message: {
+    success: false,
+    message: 'Too many OTP requests. Try again later.',
+  },
 });
 
 app.use('/api/auth/send-otp', otpLimiter);
 
+//
 // ─────────────────────────────────────────────
 // ✅ ROUTES
 // ─────────────────────────────────────────────
+//
+
 app.use('/api/auth', authRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/policy', policyRoutes);
@@ -75,9 +91,12 @@ app.use('/api/simulate', simulateRoutes);
 app.use('/api/monitor', monitorRoutes);
 app.use('/api/premium', premiumRoutes);
 
+//
 // ─────────────────────────────────────────────
 // ✅ HEALTH CHECK
 // ─────────────────────────────────────────────
+//
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
@@ -86,9 +105,12 @@ app.get('/', (req, res) => {
   res.send('PayGuard API running 🚀');
 });
 
+//
 // ─────────────────────────────────────────────
 // ✅ START SERVER
 // ─────────────────────────────────────────────
+//
+
 const start = async () => {
   try {
     await initDb();
