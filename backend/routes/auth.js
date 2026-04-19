@@ -80,6 +80,7 @@ router.post('/verify-otp', async (req, res) => {
           phone,
           name: name || '',
           isPhoneVerified: true,
+          createdAt: new Date().toISOString(),
         },
         {
           upsert: true,
@@ -92,13 +93,21 @@ router.post('/verify-otp', async (req, res) => {
     if (purpose === 'login') {
       user = await User.findOne({ phone });
 
-      // 🔥 FIX: auto-create user if not exists
+      // ✅ FIX: create user if not exists
       if (!user) {
-        user = await User.create({
-          phone,
-          name: name || '',
-          isPhoneVerified: true,
-        });
+        user = await User.findOneAndUpdate(
+          { phone },
+          {
+            phone,
+            name: name || '',
+            isPhoneVerified: true,
+            createdAt: new Date().toISOString(),
+          },
+          {
+            upsert: true,
+            new: true,
+          }
+        );
       }
     }
 
